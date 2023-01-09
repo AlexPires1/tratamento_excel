@@ -5,6 +5,8 @@ import os
 from django.http import HttpResponseRedirect, HttpResponse
 import pandas as pd
 import xlwt
+from django.contrib import messages
+
 myfile = "documents/excel_arquivos/Excel.xlsx"
 
 
@@ -21,7 +23,16 @@ def uploadExcel(request):
                 os.rename("documents/excel_arquivos/" + arquivo_excel[0], "documents/excel_arquivos/Excel.xlsx")
 
             planilha = pd.read_excel("documents/excel_arquivos/Excel.xlsx", engine='openpyxl')
-            novo_df = planilha.groupby(['CC', 'Fornecedor', 'Número', 'Dt Venc Rep.'])['Total'].sum().reset_index()
+            try:
+                novo_df = planilha.groupby(['CC', 'Fornecedor', 'Número', 'Dt Venc Rep.'])['Total'].sum().reset_index()
+            except:
+                try:
+                    novo_df = planilha.groupby(['Coletor de Custo', 'Fornecedor', 'Número', 'Dt Venc Rep.'])['Total'].sum().reset_index()
+                except:
+                    messages.info(request, 'Alguma coluna não está com o nome correto!')
+
+                    return render(request, 'excel/uploadExcel.html', {'form': form})
+
             novo_df.to_excel("documents/excel_arquivos/excel_tratado.xlsx", sheet_name="Tratados", index=False)
 
             with open('documents/excel_arquivos/excel_tratado.xlsx', 'rb') as fh:
